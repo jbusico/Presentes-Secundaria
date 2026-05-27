@@ -707,8 +707,19 @@ function courseStats(c) {
 // ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
-function init() {
+async function init() {
   loadData();
+  // Si no hay datos en localStorage, cargar automáticamente el JSON inicial
+  if (Object.keys(data).length === 0) {
+    try {
+      const res = await fetch('./datos_importados.json');
+      if (res.ok) {
+        data = await res.json();
+        saveData();
+        showToast('✓ Datos del Excel cargados automáticamente');
+      }
+    } catch(e) { /* sin conexión o sin archivo, no pasa nada */ }
+  }
   buildCourseTabs();
   dateIdx = closestIdx(course);
   render();
