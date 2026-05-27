@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Presentismo Secundaria 2026</title>
+  <style>
+    :root {
+      --P: #22c55e;
+      --A: #ef4444;
+      --J: #f59e0b;
+      --T: #3b82f6;
+      --primary: #4f46e5;
+      --primary-dark: #3730a3;
+      --bg: #f1f5f9;
+      --card: #ffffff;
+      --text: #1e293b;
+      --muted: #64748b;
+      --border: #e2e8f0;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--primary);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+
+    .header-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px 6px;
+    }
+
+    .header-top h1 { font-size: 1.15rem; font-weight: 700; letter-spacing: -0.3px; }
+
+    .header-actions { display: flex; gap: 6px; }
+    .header-actions button {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.3);
+      color: white;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.78rem;
+      font-weight: 600;
+      transition: background 0.15s;
+    }
+    .header-actions button:hover { background: rgba(255,255,255,0.28); }
+
+    /* ── COURSE TABS ── */
+    .course-tabs {
+      display: flex;
+      gap: 6px;
+      padding: 6px 16px 10px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .course-tabs::-webkit-scrollbar { display: none; }
+
+    .course-tab {
+      flex-shrink: 0;
+      padding: 5px 14px;
+      border: 2px solid rgba(255,255,255,0.4);
+      background: transparent;
+      color: rgba(255,255,255,0.8);
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .course-tab.active {
+      background: white;
+      color: var(--primary);
+      border-color: white;
+    }
+    .course-tab:hover:not(.active) { background: rgba(255,255,255,0.15); }
+
+    /* ── MAIN NAV ── */
+    .main-nav {
+      display: flex;
+      background: white;
+      border-bottom: 2px solid var(--border);
+      position: sticky;
+      top: 88px;
+      z-index: 90;
+    }
+
+    .nav-tab {
+      flex: 1;
+      padding: 10px 4px;
+      border: none;
+      background: none;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      border-bottom: 3px solid transparent;
+      margin-bottom: -2px;
+      transition: all 0.15s;
+    }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+    .nav-tab:hover:not(.active) { color: var(--text); background: var(--bg); }
+
+    /* ── CONTENT ── */
+    .content { padding: 14px 14px 40px; max-width: 860px; margin: 0 auto; }
+
+    /* ── DATE NAV ── */
+    .date-nav {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: white;
+      border-radius: 14px;
+      padding: 12px 14px;
+      margin-bottom: 12px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .date-nav .arrow {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      cursor: pointer;
+      color: var(--primary);
+      width: 38px;
+      height: 38px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: background 0.15s;
+    }
+    .date-nav .arrow:hover:not(:disabled) { background: var(--bg); }
+    .date-nav .arrow:disabled { opacity: 0.25; cursor: default; }
+
+    .date-display { text-align: center; flex: 1; padding: 0 8px; }
+    .date-display .date-main {
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.3;
+    }
+    .date-display .date-sub { font-size: 0.75rem; color: var(--muted); margin-top: 2px; }
+
+    /* ── DAY SUMMARY ── */
+    .day-summary {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+
+    .summary-chip {
+      padding: 4px 11px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: white;
+    }
+
+    /* ── MARK ALL ── */
+    .mark-all-bar {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 12px;
+      flex-wrap: wrap;
+    }
+    .mark-all-bar span { font-size: 0.78rem; color: var(--muted); }
+    .mark-all-btn {
+      padding: 5px 12px;
+      border: none;
+      border-radius: 8px;
+      color: white;
+      font-size: 0.78rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .mark-all-btn:hover { opacity: 0.85; }
+
+    /* ── STUDENT LIST (Hoy) ── */
+    .student-item {
+      display: flex;
+      align-items: center;
+      background: white;
+      border-radius: 10px;
+      padding: 9px 12px;
+      margin-bottom: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      gap: 10px;
+      transition: box-shadow 0.15s;
+    }
+    .student-item:hover { box-shadow: 0 2px 6px rgba(0,0,0,0.1); }
+
+    .student-num { font-size: 0.72rem; color: var(--muted); width: 18px; text-align: right; flex-shrink: 0; }
+    .student-name { flex: 1; font-size: 0.88rem; font-weight: 500; line-height: 1.3; }
+
+    .att-btns { display: flex; gap: 4px; flex-shrink: 0; }
+
+    .att-btn {
+      width: 34px;
+      height: 34px;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 800;
+      color: var(--muted);
+      transition: all 0.12s;
+      flex-shrink: 0;
+    }
+    .att-btn:hover { border-color: #94a3b8; }
+    .att-btn[data-state="P"].on { background: var(--P); border-color: var(--P); color: white; }
+    .att-btn[data-state="A"].on { background: var(--A); border-color: var(--A); color: white; }
+    .att-btn[data-state="J"].on { background: var(--J); border-color: var(--J); color: white; }
+    .att-btn[data-state="T"].on { background: var(--T); border-color: var(--T); color: white; }
+
+    /* ── TABLA ── */
+    .tabla-hint { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
+
+    .tabla-wrapper {
+      overflow-x: auto;
+      border-radius: 10px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      background: white;
+    }
+
+    table.att-table {
+      border-collapse: collapse;
+      width: max-content;
+    }
+
+    table.att-table th, table.att-table td { border: 1px solid var(--border); }
+
+    th.t-name {
+      position: sticky;
+      left: 0;
+      background: var(--primary);
+      color: white;
+      font-size: 0.72rem;
+      padding: 6px 10px;
+      white-space: nowrap;
+      z-index: 20;
+      min-width: 170px;
+    }
+
+    td.t-name {
+      position: sticky;
+      left: 0;
+      background: white;
+      font-size: 0.72rem;
+      padding: 5px 8px;
+      white-space: nowrap;
+      z-index: 5;
+      font-weight: 500;
+      max-width: 200px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    tr:hover td.t-name { background: #f8fafc; }
+
+    th.t-date {
+      background: #f8fafc;
+      font-size: 0.62rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-align: center;
+      padding: 4px 2px;
+      width: 32px;
+      min-width: 32px;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      height: 56px;
+      white-space: nowrap;
+    }
+    th.t-date.is-today { background: #ede9fe; color: var(--primary); }
+
+    td.t-cell {
+      text-align: center;
+      width: 32px;
+      min-width: 32px;
+      height: 26px;
+      cursor: pointer;
+      font-size: 0.68rem;
+      font-weight: 800;
+      transition: filter 0.1s;
+    }
+    td.t-cell:hover { filter: brightness(0.9); }
+    td.t-cell.s-P { background: #dcfce7; color: #15803d; }
+    td.t-cell.s-A { background: #fee2e2; color: #b91c1c; }
+    td.t-cell.s-J { background: #fef9c3; color: #92400e; }
+    td.t-cell.s-T { background: #dbeafe; color: #1d4ed8; }
+    td.t-cell.s-  { background: white; color: #e2e8f0; }
+    td.t-cell.is-today { outline: 2px solid var(--primary); outline-offset: -2px; z-index: 1; position: relative; }
+
+    /* ── STATS ── */
+    .stats-overview {
+      background: white;
+      border-radius: 14px;
+      padding: 16px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+
+    .stats-overview-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    .stats-overview h2 { font-size: 1rem; font-weight: 700; }
+    .stats-overview .sub { font-size: 0.78rem; color: var(--muted); margin-top: 2px; }
+
+    .big-pct { font-size: 2rem; font-weight: 800; line-height: 1; }
+    .big-pct-label { font-size: 0.72rem; color: var(--muted); margin-top: 2px; text-align: center; }
+
+    .stats-chips {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+    }
+
+    .stats-chip {
+      flex: 1;
+      min-width: 70px;
+      padding: 10px 8px;
+      border-radius: 10px;
+      text-align: center;
+    }
+    .stats-chip .sc-num { font-size: 1.4rem; font-weight: 800; }
+    .stats-chip .sc-lbl { font-size: 0.68rem; font-weight: 600; margin-top: 2px; }
+
+    .student-stat-row {
+      background: white;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .ssr-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+    }
+
+    .ssr-name { font-size: 0.85rem; font-weight: 600; }
+
+    .ssr-pct {
+      font-size: 0.82rem;
+      font-weight: 800;
+      padding: 2px 9px;
+      border-radius: 12px;
+    }
+    .ssr-pct.hi { background: #dcfce7; color: #15803d; }
+    .ssr-pct.mid { background: #fef9c3; color: #854d0e; }
+    .ssr-pct.lo { background: #fee2e2; color: #b91c1c; }
+    .ssr-pct.none { background: var(--bg); color: var(--muted); }
+
+    .ssr-bar {
+      height: 7px;
+      border-radius: 4px;
+      display: flex;
+      overflow: hidden;
+      background: var(--bg);
+      margin-bottom: 5px;
+    }
+    .ssr-bar-P { background: var(--P); }
+    .ssr-bar-A { background: var(--A); }
+    .ssr-bar-J { background: var(--J); }
+    .ssr-bar-T { background: var(--T); }
+
+    .ssr-detail {
+      display: flex;
+      gap: 10px;
+      font-size: 0.7rem;
+      color: var(--muted);
+    }
+    .ssr-detail span { font-weight: 600; }
+
+    /* ── SORT ── */
+    .sort-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .sort-bar label { font-size: 0.78rem; color: var(--muted); }
+    .sort-btn {
+      padding: 4px 10px;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      color: var(--muted);
+      transition: all 0.12s;
+    }
+    .sort-btn.active { border-color: var(--primary); color: var(--primary); background: #ede9fe; }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%) translateY(12px);
+      background: #1e293b;
+      color: white;
+      padding: 9px 20px;
+      border-radius: 22px;
+      font-size: 0.85rem;
+      font-weight: 500;
+      z-index: 9999;
+      opacity: 0;
+      transition: opacity 0.25s, transform 0.25s;
+      pointer-events: none;
+      white-space: nowrap;
+    }
+    #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    /* ── EMPTY ── */
+    .empty {
+      text-align: center;
+      padding: 36px 20px;
+      color: var(--muted);
+    }
+    .empty .e-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .empty p { font-size: 0.88rem; }
+
+    @media (max-width: 460px) {
+      .student-name { font-size: 0.8rem; }
+      .att-btn { width: 30px; height: 30px; font-size: 0.68rem; }
+      .header-top h1 { font-size: 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-top">
+    <h1>📋 Presentismo 2026</h1>
+    <div class="header-actions">
+      <button onclick="exportData()" title="Descargar backup JSON">⬇ Exportar</button>
+      <button onclick="triggerImport()" title="Cargar backup JSON">⬆ Importar</button>
+    </div>
+  </div>
+  <div class="course-tabs" id="courseTabs"></div>
+</header>
+
+<div class="main-nav">
+  <button class="nav-tab active" onclick="switchView('hoy',this)">📅 Hoy</button>
+  <button class="nav-tab" onclick="switchView('tabla',this)">📊 Tabla</button>
+  <button class="nav-tab" onclick="switchView('stats',this)">📈 Estadísticas</button>
+</div>
+
+<div class="content" id="content"></div>
+
+<div id="toast"></div>
+<input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
+
+<script>
+// ═══════════════════════════════════════════════
+//  DATOS DEL COLEGIO
+// ═══════════════════════════════════════════════
+const SCHOOL = {
+  "1° año": {
+    students: [
+      "ARANGIO FRIXIONE Lucía María",
+      "ASTA ALASTRE Jonathan Alessandro",
+      "BASSO ZUNINO María Julieta",
+      "BEDETTI Emilia",
+      "BEVACQUA Jazmín Francesca",
+      "BRATIG Esmeralda",
+      "CENTURIÓN KOFLER Camila Fernanda",
+      "DUARTE SAENZ Luciana Pilar",
+      "FEDERICO Giovanni",
+      "FLEMING Ingrid",
+      "FORMOSO MACIAS Victoria",
+      "GUZMAN DAVALOS Esmeralda Vanina",
+      "LOMBARDI Francesca Oriana",
+      "MAUAS Luciano Sebastián",
+      "ONZARI Guadalupe Azul",
+      "POLITE LUCCA Josefina",
+      "REQUENA GONZALEZ Emilia",
+      "RODRÍGUEZ PLANCHART Angel de Jesús"
+    ],
+    dates: ["3-mar","10-mar","17-mar","24-mar","31-mar","7-abr","14-abr","21-abr","28-abr","5-may","12-may","19-may","26-may","2-jun","9-jun","16-jun","23-jun","30-jun","7-jul","14-jul","21-jul","28-jul","4-ago","11-ago","18-ago","25-ago","1-sept","8-sept","15-sept","22-sept","29-sept","6-oct","13-oct","20-oct","27-oct","3-nov","10-nov","17-nov","24-nov","1-dic","8-dic","15-dic"]
+  },
+  "2° año": {
+    students: [
+      "ÁLVAREZ BRITO, Crysmar Antonella",
+      "BALARI, Juan Cruz",
+      "BALARI, Mía Rocío",
+      "BAS FRAGALÁ, Guadalupe",
+      "CABAÑES, Sofía",
+      "COLUCCIA BERNÁRDES, Sofía Lara",
+      "CHELALA, Luis Humberto",
+      "DIMOULAS, Máxima",
+      "DRAZER SORDI, Alma",
+      "ENGLER, Amanda Gabriela",
+      "ESPINOSA, Lara Pilar",
+      "FERNÁNDEZ GAUNA, Melina",
+      "FONSECA PRADA, Juana",
+      "GARCÍA SANCHEZ, Matías Gerónimo",
+      "GEORGIETT, Liz Victoria",
+      "GÓNGORA, Marcos Pier Gael",
+      "GONZALEZ, Agustín",
+      "GUTIERREZ ROCA, Rosario",
+      "HERRERA LUNA, Andrea Camila",
+      "HERRERA HERRERA, Sheryl Stefanía",
+      "LADISLAO, Nicolás Guillermo",
+      "MANFREDINI DEGUI, Joaquina",
+      "MANSILLA, Pedro",
+      "MARTÍNEZ ARÉVALO, Bautista",
+      "NOVOA GIGENA, Santiago",
+      "PIETRAGALLA, Isabella",
+      "PRIMAVERA, Ramiro",
+      "QUIROGA DI LORENZI, Carolina",
+      "RUGGERI, Karen",
+      "ZOTELO, Santiago Renzo"
+    ],
+    dates: ["4-mar","11-mar","18-mar","25-mar","1-abr","8-abr","15-abr","22-abr","29-abr","6-may","13-may","20-may","27-may","3-jun","10-jun","17-jun","24-jun","1-jul","8-jul","15-jul","22-jul","29-jul","5-ago","12-ago","19-ago","26-ago","2-sept","9-sept","16-sept","23-sept","30-sept","7-oct","14-oct","21-oct","28-oct","4-nov","11-nov","18-nov","25-nov","2-dic","9-dic"]
+  },
+  "3° año": {
+    students: [
+      "ACOSTA, Juan Cruz",
+      "BACIGALUPE, Rosario",
+      "BENITEZ AGUINALDE, Victoria Valentina",
+      "BUSTO JACOD, Rocío Micaela",
+      "DE LA TORRE CANDA, Juan Ignacio",
+      "FAYAD, Delfina"
+    ],
+    dates: ["5-mar","12-mar","19-mar","26-mar","2-abr","9-abr","16-abr","23-abr","30-abr","7-may","14-may","21-may","28-may","4-jun","11-jun","18-jun","25-jun","2-jul","9-jul","16-jul","23-jul","30-jul","6-ago","13-ago","20-ago","27-ago","3-sept","10-sept","17-sept","24-sept","1-oct","8-oct","15-oct","22-oct","29-oct","5-nov","12-nov","19-nov","26-nov","3-dic","10-dic","17-dic"]
+  },
+  "4° año": {
+    students: [
+      "AREAN MARRA Gael",
+      "BARBONA Victoria",
+      "CAMARASA Simona",
+      "COLUCCIA BERNARDEZ Mateo",
+      "DELISANTI POMA Chiara",
+      "GARCÍA HADAD Antonela",
+      "GRIMAUX Marcos",
+      "GRIMAUX Rómulo",
+      "GUERRERO VIVAS Sofia",
+      "LA GIGLIA BOGGIANO Juan Cruz",
+      "LOMBARDI ROMANO Ulysses",
+      "MASCARI Tiziano",
+      "PEDERNERA Lara",
+      "ROSITO Catalina"
+    ],
+    dates: ["3-mar","5-mar","10-mar","12-mar","17-mar","19-mar","24-mar","26-mar","31-mar","2-abr","7-abr","9-abr","14-abr","16-abr","21-abr","23-abr","28-abr","30-abr","5-may","7-may","12-may","14-may","19-may","21-may","26-may","28-may","2-jun","4-jun","9-jun","11-jun","16-jun","18-jun","23-jun","25-jun","30-jun","2-jul","7-jul","9-jul","14-jul","16-jul","21-jul","23-jul","28-jul","30-jul","4-ago","6-ago","11-ago","13-ago","18-ago","20-ago","25-ago","27-ago","1-sept","3-sept","8-sept","10-sept","15-sept","17-sept","22-sept","24-sept","29-sept","1-oct","6-oct","8-oct","13-oct","15-oct","20-oct","22-oct","27-oct","29-oct","3-nov","5-nov","10-nov","12-nov","17-nov","19-nov","24-nov","26-nov","1-dic","3-dic"]
+  },
+  "5° año": {
+    students: [
+      "ABALLAY Matias Martin",
+      "BASSO ZUNINO María Eugenia",
+      "CAMPESI BIANCHI Matías",
+      "CAMURATI Delfina",
+      "CASTRO Emiliano",
+      "DE LA TORRE CANDA Bautista",
+      "DÍAZ GONZÁLEZ Tatiana Belén",
+      "DUARTE PADRÓN Mathias",
+      "ENGLER Dafne Eleonora",
+      "GAMARRA GASSER Marianela",
+      "GENISE Felipe",
+      "GRITTA FIDALGO Olivia",
+      "JANCIC ANTELO Emma",
+      "LAMARQUE SÁENZ Débora Sofía",
+      "MENDOZA CARRIZO Lautaro",
+      "PEZZELLA Gennaro",
+      "PIETRAGALLA Gina",
+      "QUIROGA DELORENZI Victoria",
+      "ROJAS Morena",
+      "SAVANT Bautista Rene",
+      "SEMISA Bautista",
+      "SOSA Melody Antonella",
+      "VERDI Lourdes"
+    ],
+    dates: ["4-mar","5-mar","11-mar","12-mar","18-mar","19-mar","25-mar","26-mar","1-abr","2-abr","8-abr","9-abr","15-abr","16-abr","22-abr","23-abr","29-abr","30-abr","6-may","7-may","13-may","14-may","20-may","21-may","27-may","28-may","3-jun","4-jun","10-jun","11-jun","17-jun","18-jun","24-jun","25-jun","1-jul","2-jul","8-jul","9-jul","15-jul","16-jul","22-jul","23-jul","29-jul","30-jul","5-ago","6-ago","12-ago","13-ago","19-ago","20-ago","26-ago","27-ago","2-sept","3-sept","9-sept","10-sept","16-sept","17-sept","23-sept","24-sept","30-sept","1-oct","7-oct","8-oct","14-oct","15-oct","21-oct","22-oct","28-oct","29-oct","4-nov","5-nov","11-nov","12-nov","18-nov","19-nov","25-nov","26-nov","2-dic","3-dic","9-dic","10-dic"]
+  }
+};
+
+const COURSES    = Object.keys(SCHOOL);
+const STATES     = ['P','A','J','T'];
+const S_LABEL    = { P:'Presente', A:'Ausente', J:'Justificado', T:'Tardanza' };
+const S_COLOR    = { P:'#22c55e',  A:'#ef4444', J:'#f59e0b',     T:'#3b82f6' };
+const MONTHS_IDX = { ene:0,feb:1,mar:2,abr:3,may:4,jun:5,jul:6,ago:7,sept:8,oct:9,nov:10,dic:11 };
+const MONTHS_STR = ['ene','feb','mar','abr','may','jun','jul','ago','sept','oct','nov','dic'];
+const MONTHS_ES  = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DAYS_ES    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+
+// ═══════════════════════════════════════════════
+//  ESTADO DE LA APP
+// ═══════════════════════════════════════════════
+let course   = COURSES[0];
+let view     = 'hoy';
+let dateIdx  = 0;
+let sortMode = 'orden';   // 'orden' | 'pct' | 'nombre'
+let data     = {};        // { course: { student: { date: state } } }
+
+// ═══════════════════════════════════════════════
+//  STORAGE
+// ═══════════════════════════════════════════════
+function loadData() {
+  try { data = JSON.parse(localStorage.getItem('presentismo2026') || '{}'); }
+  catch(e) { data = {}; }
+}
+function saveData() {
+  localStorage.setItem('presentismo2026', JSON.stringify(data));
+}
+function getAtt(c, s, d)       { return data?.[c]?.[s]?.[d] || ''; }
+function setAtt(c, s, d, val)  {
+  if (!data[c])    data[c] = {};
+  if (!data[c][s]) data[c][s] = {};
+  if (val === '')  delete data[c][s][d];
+  else             data[c][s][d] = val;
+  saveData();
+}
+function toggleAtt(c, s, d) {
+  const cur = getAtt(c,s,d);
+  const nxt = STATES[(STATES.indexOf(cur) + 1) % (STATES.length + 1)] ?? '';
+  // cycle: '' → P → A → J → T → ''
+  const next = cur === 'T' ? '' : STATES[Math.max(0, STATES.indexOf(cur) + 1)];
+  const final = cur === '' ? 'P' : cur === 'T' ? '' : STATES[STATES.indexOf(cur)+1];
+  setAtt(c,s,d,final);
+  return final;
+}
+function clickState(c, s, d, st) {
+  const cur = getAtt(c,s,d);
+  const nxt = cur === st ? '' : st;
+  setAtt(c,s,d,nxt);
+  return nxt;
+}
+
+// ═══════════════════════════════════════════════
+//  FECHAS
+// ═══════════════════════════════════════════════
+function parseDate(str) {
+  const [d,m] = str.split('-');
+  return new Date(2026, MONTHS_IDX[m], +d);
+}
+function todayKey() {
+  const t = new Date();
+  return t.getDate() + '-' + MONTHS_STR[t.getMonth()];
+}
+function formatFull(str) {
+  const d = parseDate(str);
+  return DAYS_ES[d.getDay()] + ' ' + d.getDate() + ' de ' + MONTHS_ES[d.getMonth()];
+}
+function closestIdx(c) {
+  const dates = SCHOOL[c].dates;
+  const today = new Date(); today.setHours(0,0,0,0);
+  const exact = dates.indexOf(todayKey());
+  if (exact >= 0) return exact;
+  let best = 0;
+  for (let i = 0; i < dates.length; i++) {
+    if (parseDate(dates[i]) <= today) best = i;
+  }
+  return best;
+}
+
+// ═══════════════════════════════════════════════
+//  STATS HELPERS
+// ═══════════════════════════════════════════════
+function studentStats(c, s) {
+  const counts = { P:0, A:0, J:0, T:0 };
+  SCHOOL[c].dates.forEach(d => { const st = getAtt(c,s,d); if (st) counts[st]++; });
+  const total = counts.P + counts.A + counts.J + counts.T;
+  const pct   = total > 0 ? Math.round((counts.P + counts.T) / total * 100) : null;
+  return { counts, total, pct };
+}
+function courseStats(c) {
+  const totals = { P:0, A:0, J:0, T:0 };
+  SCHOOL[c].students.forEach(s => {
+    const r = studentStats(c,s);
+    STATES.forEach(st => totals[st] += r.counts[st]);
+  });
+  const all = Object.values(totals).reduce((a,b)=>a+b, 0);
+  const pct = all > 0 ? Math.round((totals.P + totals.T) / all * 100) : null;
+  const markedDates = SCHOOL[c].dates.filter(d =>
+    SCHOOL[c].students.some(s => getAtt(c,s,d))
+  ).length;
+  return { totals, all, pct, markedDates };
+}
+
+// ═══════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════
+function init() {
+  loadData();
+  buildCourseTabs();
+  dateIdx = closestIdx(course);
+  render();
+}
+
+// ═══════════════════════════════════════════════
+//  COURSE TABS
+// ═══════════════════════════════════════════════
+function buildCourseTabs() {
+  document.getElementById('courseTabs').innerHTML = COURSES.map(c =>
+    `<button class="course-tab${c===course?' active':''}" onclick="selCourse('${c}')">${c}</button>`
+  ).join('');
+}
+function selCourse(c) {
+  course = c;
+  dateIdx = closestIdx(c);
+  buildCourseTabs();
+  render();
+}
+
+// ═══════════════════════════════════════════════
+//  VIEW SWITCH
+// ═══════════════════════════════════════════════
+function switchView(v, btn) {
+  view = v;
+  document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  render();
+}
+function render() {
+  const el = document.getElementById('content');
+  if (view === 'hoy')   renderHoy(el);
+  else if (view === 'tabla') renderTabla(el);
+  else                  renderStats(el);
+}
+
+// ═══════════════════════════════════════════════
+//  VIEW: HOY
+// ═══════════════════════════════════════════════
+function renderHoy(el) {
+  const c       = course;
+  const dates   = SCHOOL[c].dates;
+  const students= SCHOOL[c].students;
+  const date    = dates[dateIdx];
+  const isToday = date === todayKey();
+
+  // Summary
+  const cnt = { P:0,A:0,J:0,T:0,empty:0 };
+  students.forEach(s => { const st=getAtt(c,s,date); st ? cnt[st]++ : cnt.empty++; });
+
+  const chipsHTML = STATES
+    .filter(st => cnt[st] > 0)
+    .map(st => `<span class="summary-chip" style="background:${S_COLOR[st]}">${cnt[st]} ${S_LABEL[st]}</span>`)
+    .join('');
+  const emptyChip = cnt.empty > 0
+    ? `<span class="summary-chip" style="background:#94a3b8">${cnt.empty} sin marcar</span>` : '';
+
+  // Mark all buttons
+  const markAllHTML = `<div class="mark-all-bar">
+    <span>Marcar todos:</span>
+    ${STATES.map(st =>
+      `<button class="mark-all-btn" style="background:${S_COLOR[st]}"
+         onclick="markAll('${date}','${st}')">${S_LABEL[st]}</button>`
+    ).join('')}
+  </div>`;
+
+  // Student rows
+  const rowsHTML = students.map((s,i) => {
+    const cur = getAtt(c,s,date);
+    const btns = STATES.map(st =>
+      `<button class="att-btn${cur===st?' on':''}" data-state="${st}" data-i="${i}" data-st="${st}"
+         onclick="clickBtn(${i},'${date}','${st}')">${st}</button>`
+    ).join('');
+    return `<div class="student-item" id="row-${i}">
+      <span class="student-num">${i+1}</span>
+      <span class="student-name">${s}</span>
+      <div class="att-btns">${btns}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="date-nav">
+      <button class="arrow" onclick="prevDate()" ${dateIdx===0?'disabled':''}>&lsaquo;</button>
+      <div class="date-display">
+        <div class="date-main">${isToday?'🟢 ':''}${formatFull(date)}</div>
+        <div class="date-sub">${isToday?'Hoy · ':''} Clase ${dateIdx+1} de ${dates.length}</div>
+      </div>
+      <button class="arrow" onclick="nextDate()" ${dateIdx>=dates.length-1?'disabled':''}>&rsaquo;</button>
+    </div>
+    <div class="day-summary">${chipsHTML}${emptyChip}</div>
+    ${markAllHTML}
+    <div id="studentList">${rowsHTML}</div>`;
+}
+
+function prevDate() { if (dateIdx>0) { dateIdx--; render(); } }
+function nextDate() { if (dateIdx<SCHOOL[course].dates.length-1) { dateIdx++; render(); } }
+
+function clickBtn(sIdx, date, st) {
+  const s   = SCHOOL[course].students[sIdx];
+  const nst = clickState(course, s, date, st);
+
+  // Update just that row's buttons (no full re-render = faster)
+  const row = document.getElementById('row-' + sIdx);
+  if (row) {
+    row.querySelectorAll('.att-btn').forEach(btn => {
+      btn.classList.toggle('on', btn.dataset.st === nst);
+    });
+  }
+  // Refresh summary chips only
+  refreshSummary(date);
+}
+
+function refreshSummary(date) {
+  const students = SCHOOL[course].students;
+  const cnt = { P:0,A:0,J:0,T:0,empty:0 };
+  students.forEach(s => { const st=getAtt(course,s,date); st?cnt[st]++:cnt.empty++; });
+  const bar = document.querySelector('.day-summary');
+  if (!bar) return;
+  const chipsHTML = STATES
+    .filter(st => cnt[st] > 0)
+    .map(st => `<span class="summary-chip" style="background:${S_COLOR[st]}">${cnt[st]} ${S_LABEL[st]}</span>`)
+    .join('');
+  const emptyChip = cnt.empty > 0
+    ? `<span class="summary-chip" style="background:#94a3b8">${cnt.empty} sin marcar</span>` : '';
+  bar.innerHTML = chipsHTML + emptyChip;
+}
+
+function markAll(date, st) {
+  SCHOOL[course].students.forEach(s => setAtt(course, s, date, st));
+  render();
+  showToast('✓ Todos marcados como ' + S_LABEL[st]);
+}
+
+// ═══════════════════════════════════════════════
+//  VIEW: TABLA
+// ═══════════════════════════════════════════════
+function renderTabla(el) {
+  const c       = course;
+  const dates   = SCHOOL[c].dates;
+  const students= SCHOOL[c].students;
+  const today   = todayKey();
+
+  const thDates = dates.map((d,di) =>
+    `<th class="t-date${d===today?' is-today':''}" title="${formatFull(d)}">${d}</th>`
+  ).join('');
+
+  const rows = students.map((s,si) => {
+    const cells = dates.map((d,di) => {
+      const st = getAtt(c,s,d) || '';
+      return `<td class="t-cell s-${st}${d===today?' is-today':''}" onclick="toggleCell(${si},${di})">${st}</td>`;
+    }).join('');
+    return `<tr><td class="t-name" title="${s}">${s}</td>${cells}</tr>`;
+  }).join('');
+
+  el.innerHTML = `
+    <p class="tabla-hint">Tocá una celda para cambiar el estado (vacío → P → A → J → T → vacío). Deslizá para ver todas las fechas.</p>
+    <div class="tabla-wrapper">
+      <table class="att-table" id="attTable">
+        <thead><tr><th class="t-name">Alumno/a</th>${thDates}</tr></thead>
+        <tbody id="attBody">${rows}</tbody>
+      </table>
+    </div>`;
+
+  // Scroll to today
+  setTimeout(() => {
+    const todayTh = el.querySelector('.t-date.is-today');
+    if (todayTh) todayTh.scrollIntoView({ inline: 'center', behavior: 'smooth', block: 'nearest' });
+  }, 80);
+}
+
+function toggleCell(si, di) {
+  const c = course;
+  const s = SCHOOL[c].students[si];
+  const d = SCHOOL[c].dates[di];
+  const nst = toggleAtt(c, s, d);
+  const today = todayKey();
+
+  const tbody = document.getElementById('attBody');
+  if (tbody) {
+    const cell = tbody.rows[si].cells[di + 1];
+    cell.className = `t-cell s-${nst||''}${d===today?' is-today':''}`;
+    cell.textContent = nst;
+  }
+}
+
+// ═══════════════════════════════════════════════
+//  VIEW: ESTADÍSTICAS
+// ═══════════════════════════════════════════════
+function renderStats(el) {
+  const c       = course;
+  const students= SCHOOL[c].students;
+  const cs      = courseStats(c);
+
+  // Overview card
+  const pctColor = cs.pct === null ? '#94a3b8' : cs.pct >= 75 ? '#22c55e' : cs.pct >= 60 ? '#f59e0b' : '#ef4444';
+  const pctText  = cs.pct === null ? '--' : cs.pct + '%';
+
+  const chipsHTML = STATES.map(st => `
+    <div class="stats-chip" style="background:${S_COLOR[st]}18">
+      <div class="sc-num" style="color:${S_COLOR[st]}">${cs.totals[st]}</div>
+      <div class="sc-lbl" style="color:${S_COLOR[st]}">${S_LABEL[st]}</div>
+    </div>`).join('');
+
+  // Sort students
+  let sorted = students.map((s,i) => ({ s, i, ...studentStats(c,s) }));
+  if (sortMode === 'pct') {
+    sorted.sort((a,b) => {
+      if (a.pct===null && b.pct===null) return 0;
+      if (a.pct===null) return 1;
+      if (b.pct===null) return -1;
+      return a.pct - b.pct; // ascending (worst first)
+    });
+  } else if (sortMode === 'nombre') {
+    sorted.sort((a,b) => a.s.localeCompare(b.s));
+  }
+
+  const rowsHTML = sorted.map(({ s, i, counts, total, pct }) => {
+    const pctClass = pct===null ? 'none' : pct>=75 ? 'hi' : pct>=60 ? 'mid' : 'lo';
+    const pctDisp  = pct===null ? 'sin datos' : pct + '%';
+
+    const barParts = total > 0
+      ? STATES.filter(st => counts[st] > 0)
+              .map(st => `<div class="ssr-bar-${st}" style="flex:${counts[st]}"></div>`)
+              .join('')
+      : '<div style="flex:1;background:var(--bg)"></div>';
+
+    const detail = STATES.filter(st => counts[st] > 0)
+      .map(st => `<span style="color:${S_COLOR[st]}">${counts[st]} ${st}</span>`)
+      .join(' · ') || 'Sin registros';
+
+    return `<div class="student-stat-row">
+      <div class="ssr-top">
+        <span class="ssr-name">${i+1}. ${s}</span>
+        <span class="ssr-pct ${pctClass}">${pctDisp}</span>
+      </div>
+      <div class="ssr-bar">${barParts}</div>
+      <div class="ssr-detail">${detail} ${total>0 ? '· <span>'+total+' clases</span>' : ''}</div>
+    </div>`;
+  }).join('');
+
+  const sortHTML = `<div class="sort-bar">
+    <label>Ordenar:</label>
+    <button class="sort-btn${sortMode==='orden'?' active':''}" onclick="setSort('orden')">N° lista</button>
+    <button class="sort-btn${sortMode==='nombre'?' active':''}" onclick="setSort('nombre')">Nombre</button>
+    <button class="sort-btn${sortMode==='pct'?' active':''}" onclick="setSort('pct')">% Asistencia ↑</button>
+  </div>`;
+
+  el.innerHTML = `
+    <div class="stats-overview">
+      <div class="stats-overview-top">
+        <div>
+          <h2>${c}</h2>
+          <div class="sub">${students.length} alumnos · ${cs.markedDates}/${SCHOOL[c].dates.length} clases registradas</div>
+        </div>
+        <div style="text-align:center">
+          <div class="big-pct" style="color:${pctColor}">${pctText}</div>
+          <div class="big-pct-label">asistencia</div>
+        </div>
+      </div>
+      <div class="stats-chips">${chipsHTML}</div>
+    </div>
+    <h3 style="font-size:0.88rem;color:var(--muted);margin-bottom:8px">Por alumno</h3>
+    ${sortHTML}
+    ${rowsHTML}`;
+}
+
+function setSort(mode) {
+  sortMode = mode;
+  renderStats(document.getElementById('content'));
+}
+
+// ═══════════════════════════════════════════════
+//  EXPORT / IMPORT
+// ═══════════════════════════════════════════════
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = 'presentismo2026_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast('✓ Backup guardado');
+}
+function triggerImport() {
+  document.getElementById('importFile').click();
+}
+function handleImport(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      data = JSON.parse(ev.target.result);
+      saveData();
+      render();
+      showToast('✓ Datos importados correctamente');
+    } catch(_) {
+      showToast('✗ Archivo inválido');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+// ═══════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// ═══════════════════════════════════════════════
+//  ARRANCAR
+// ═══════════════════════════════════════════════
+init();
+</script>
+</body>
+</html>
