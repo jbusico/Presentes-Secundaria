@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Presentismo Secundaria 2026</title>
+  <link rel="icon" href="logo.jpg" type="image/jpeg">
   <style>
     :root {
       --P: #22c55e;
@@ -594,7 +595,10 @@
 
 <header>
   <div class="header-top">
-    <h1>📋 Presentismo 2026</h1>
+    <div style="display:flex;align-items:center;gap:10px">
+      <img src="logo.jpg" alt="Logo" style="height:36px;width:36px;border-radius:50%;object-fit:cover;border:2px solid rgba(255,255,255,0.4);flex-shrink:0">
+      <h1>Presentismo 2026</h1>
+    </div>
     <div class="header-actions">
       <button onclick="exportData()" title="Descargar backup JSON">⬇ Exportar</button>
       <button onclick="triggerImport()" title="Cargar backup JSON">⬆ Importar</button>
