@@ -632,6 +632,66 @@
       .att-btn { width: 30px; height: 30px; font-size: 0.68rem; }
       .header-top h1 { font-size: 1rem; }
     }
+
+    /* ── MODAL ALUMNOS ── */
+    .student-mgmt-item {
+      display: flex;
+      align-items: center;
+      padding: 8px 10px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      border: 1px solid var(--border);
+      background: white;
+      gap: 8px;
+    }
+    .student-mgmt-item:hover { background: var(--bg); }
+    .student-mgmt-num { font-size: 0.72rem; color: var(--muted); width: 22px; text-align: right; flex-shrink: 0; }
+    .student-mgmt-name { flex: 1; font-size: 0.85rem; font-weight: 500; }
+    .btn-remove {
+      width: 30px; height: 30px;
+      border: none;
+      background: #fee2e2;
+      color: #b91c1c;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.12s;
+    }
+    .btn-remove:hover { background: #fca5a5; }
+    .add-student-bar {
+      display: flex;
+      gap: 8px;
+      padding: 10px 14px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .add-student-input {
+      flex: 1;
+      padding: 8px 12px;
+      border: 2px solid var(--border);
+      border-radius: 8px;
+      font-size: 0.85rem;
+      outline: none;
+      font-family: inherit;
+      min-width: 0;
+    }
+    .add-student-input:focus { border-color: var(--primary); }
+    .add-student-btn {
+      padding: 8px 14px;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 0.85rem;
+      font-weight: 700;
+      white-space: nowrap;
+      transition: background 0.12s;
+      flex-shrink: 0;
+    }
+    .add-student-btn:hover { background: var(--primary-dark); }
   </style>
 </head>
 <body>
@@ -643,6 +703,7 @@
       <h1>Presentismo <span id="yearLabel"></span></h1>
     </div>
     <div class="header-actions">
+      <button onclick="openStudentsModal()" title="Agregar o quitar alumnos del curso">👥 Alumnos</button>
       <button onclick="exportData()" title="Descargar backup JSON">⬇ Exportar</button>
       <button onclick="triggerImport()" title="Cargar backup JSON">⬆ Importar</button>
     </div>
@@ -667,6 +728,24 @@
     </div>
     <div class="modal-subheader">📵 Sin clase: la fecha no cuenta en estadísticas &nbsp;·&nbsp; 🔒 Bloqueado: impide cambios accidentales</div>
     <div class="modal-list" id="ncModalList"></div>
+  </div>
+</div>
+
+<!-- Modal gestionar alumnos -->
+<div class="modal-overlay hidden" id="studentsModal" onclick="closeStudentsModal(event)">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>👥 Gestionar alumnos</h2>
+      <button class="modal-close" onclick="closeStudentsModalForce()">✕</button>
+    </div>
+    <div class="modal-subheader" id="studentsModalSubheader"></div>
+    <div class="modal-list" id="studentsModalList"></div>
+    <div class="add-student-bar">
+      <input type="text" class="add-student-input" id="newStudentInput"
+             placeholder="APELLIDO Nombre (ej: GARCÍA Juan)"
+             onkeydown="if(event.key==='Enter')addStudent()">
+      <button class="add-student-btn" onclick="addStudent()">+ Agregar</button>
+    </div>
   </div>
 </div>
 
@@ -700,6 +779,7 @@ let sortMode = 'orden';   // 'orden' | 'pct' | 'nombre'
 let data     = {};        // { course: { student: { date: state } } }
 let noClass  = {};        // { course: [date, date, ...] }
 let locked   = {};        // { course: [date, date, ...] }
+let studentsOverride = {}; // { course: [name, ...] }
 
 // ═══════════════════════════════════════════════
 //  STORAGE
@@ -726,6 +806,19 @@ function toggleNoClass(c, d) {
   const idx = noClass[c].indexOf(d);
   if (idx >= 0) noClass[c].splice(idx, 1);
   else          noClass[c].push(d);
+}
+function loadStudents() {
+  try { studentsOverride = JSON.parse(localStorage.getItem('alumnos2026') || '{}'); }
+  catch(e) { studentsOverride = {}; }
+  COURSES.forEach(c => {
+    if (studentsOverride[c] && studentsOverride[c].length > 0) {
+      SCHOOL[c].students = [...studentsOverride[c]];
+    }
+  });
+}
+function saveStudents() {
+  COURSES.forEach(c => { studentsOverride[c] = [...SCHOOL[c].students]; });
+  localStorage.setItem('alumnos2026', JSON.stringify(studentsOverride));
 }
 function loadLocked() {
   try { locked = JSON.parse(localStorage.getItem(`bloqueado${YEAR}`) || '{}'); }
@@ -842,6 +935,83 @@ function courseStats(c) {
 }
 
 // ═══════════════════════════════════════════════
+//  MODAL ALUMNOS
+// ═══════════════════════════════════════════════
+function openStudentsModal() {
+  renderStudentsModal();
+  document.getElementById('studentsModal').classList.remove('hidden');
+  setTimeout(() => document.getElementById('newStudentInput').focus(), 100);
+}
+
+function renderStudentsModal() {
+  const c = course;
+  const students = SCHOOL[c].students;
+  document.getElementById('studentsModalSubheader').textContent =
+    c + ' · ' + students.length + ' alumno' + (students.length !== 1 ? 's' : '');
+  document.getElementById('studentsModalList').innerHTML = students.length === 0
+    ? '<div class="empty"><div class="e-icon">👤</div><p>No hay alumnos en este curso.</p></div>'
+    : students.map((s, i) =>
+        `<div class="student-mgmt-item">
+          <span class="student-mgmt-num">${i + 1}</span>
+          <span class="student-mgmt-name">${s}</span>
+          <button class="btn-remove" onclick="removeStudent(${i})" title="Eliminar alumno">✕</button>
+        </div>`
+      ).join('');
+}
+
+function addStudent() {
+  const input = document.getElementById('newStudentInput');
+  const name = input.value.trim();
+  if (!name) { input.focus(); return; }
+
+  const c = course;
+  const students = SCHOOL[c].students;
+
+  if (students.some(s => s.toLowerCase() === name.toLowerCase())) {
+    showToast('⚠ Ya existe un alumno con ese nombre');
+    input.select();
+    return;
+  }
+
+  const insertIdx = students.findIndex(s =>
+    name.localeCompare(s, 'es', { sensitivity: 'base' }) < 0
+  );
+  if (insertIdx === -1) students.push(name);
+  else students.splice(insertIdx, 0, name);
+
+  saveStudents();
+  input.value = '';
+  renderStudentsModal();
+  showToast('✓ ' + name + ' agregado/a');
+}
+
+function removeStudent(idx) {
+  const c = course;
+  const students = SCHOOL[c].students;
+  const name = students[idx];
+
+  if (!confirm('¿Eliminar a ' + name + ' del curso?\n\nSus registros de asistencia también se borrarán.')) return;
+
+  if (data[c] && data[c][name]) {
+    delete data[c][name];
+    saveData();
+  }
+
+  students.splice(idx, 1);
+  saveStudents();
+  renderStudentsModal();
+  showToast('✓ ' + name + ' eliminado/a del curso');
+}
+
+function closeStudentsModal(e) {
+  if (e.target === document.getElementById('studentsModal')) closeStudentsModalForce();
+}
+function closeStudentsModalForce() {
+  document.getElementById('studentsModal').classList.add('hidden');
+  render();
+}
+
+// ═══════════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════════
 async function init() {
@@ -850,6 +1020,7 @@ async function init() {
   loadData();
   loadNoClass();
   loadLocked();
+  loadStudents();
   // Si no hay datos en localStorage, cargar automáticamente el JSON inicial
   if (Object.keys(data).length === 0) {
     try {
