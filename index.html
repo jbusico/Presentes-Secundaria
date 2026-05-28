@@ -456,6 +456,49 @@
 
     th.t-date.sin-clase { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
     td.t-cell.sin-clase { background: #f8fafc; color: #cbd5e1; cursor: default; font-size: 0.9rem; }
+    th.t-date.is-locked { background: #fef9c3; color: #92400e; }
+    td.t-cell.is-locked { cursor: not-allowed; filter: brightness(0.95); }
+
+    .lock-banner {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fef9c3;
+      border: 1px solid #fde68a;
+      border-radius: 10px;
+      padding: 10px 14px;
+      margin-bottom: 12px;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: #92400e;
+    }
+    .lb-icon { font-size: 1rem; }
+
+    .noclass-btn.lock-active {
+      background: #fef9c3;
+      border-style: solid;
+      border-color: #fde68a;
+      color: #92400e;
+    }
+
+    .mdi-dot.lck { background: #f59e0b; }
+    .modal-date-item.lck-active { background: #fefce8; border-color: #fde68a; }
+
+    .mdi-action-btn {
+      width: 34px; height: 34px;
+      border: 2px solid var(--border);
+      background: white;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      display: flex; align-items: center; justify-content: center;
+      transition: all 0.12s;
+      flex-shrink: 0;
+    }
+    .mdi-action-btn:hover:not(:disabled) { background: var(--bg); }
+    .mdi-action-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+    .mdi-action-btn.on-nc { background: #f1f5f9; border-color: #94a3b8; }
+    .mdi-action-btn.on-lck { background: #fef9c3; border-color: #fde68a; }
 
     /* ── TOAST ── */
     #toast {
@@ -619,10 +662,10 @@
 <div class="modal-overlay hidden" id="ncModal" onclick="closeNcModal(event)">
   <div class="modal-panel">
     <div class="modal-header">
-      <h2>📵 Fechas sin clase</h2>
+      <h2>📋 Gestionar fechas</h2>
       <button class="modal-close" onclick="closeNcModalForce()">✕</button>
     </div>
-    <div class="modal-subheader">Tocá una fecha para marcarla o desmarcarla como sin clase.</div>
+    <div class="modal-subheader">📵 Sin clase: la fecha no cuenta en estadísticas &nbsp;·&nbsp; 🔒 Bloqueado: impide cambios accidentales</div>
     <div class="modal-list" id="ncModalList"></div>
   </div>
 </div>
@@ -785,6 +828,7 @@ let dateIdx  = 0;
 let sortMode = 'orden';   // 'orden' | 'pct' | 'nombre'
 let data     = {};        // { course: { student: { date: state } } }
 let noClass  = {};        // { course: [date, date, ...] }
+let locked   = {};        // { course: [date, date, ...] }
 
 // ═══════════════════════════════════════════════
 //  STORAGE
@@ -811,6 +855,36 @@ function toggleNoClass(c, d) {
   const idx = noClass[c].indexOf(d);
   if (idx >= 0) noClass[c].splice(idx, 1);
   else          noClass[c].push(d);
+}
+function loadLocked() {
+  try { locked = JSON.parse(localStorage.getItem('bloqueado2026') || '{}'); }
+  catch(e) { locked = {}; }
+}
+function saveLocked() {
+  localStorage.setItem('bloqueado2026', JSON.stringify(locked));
+}
+function isLocked(c, d) {
+  return (locked[c] || []).includes(d);
+}
+function toggleLocked(c, d) {
+  if (!locked[c]) locked[c] = [];
+  const idx = locked[c].indexOf(d);
+  if (idx >= 0) locked[c].splice(idx, 1);
+  else          locked[c].push(d);
+  saveLocked();
+}
+function lockAllBefore(c, upToDate) {
+  if (!locked[c]) locked[c] = [];
+  const dates = SCHOOL[c].dates;
+  const cutoff = parseDate(upToDate);
+  dates.forEach(d => {
+    const hasDato = SCHOOL[c].students.some(s => getAtt(c,s,d));
+    const isBeforeOrEqual = parseDate(d) <= cutoff;
+    if ((hasDato || isBeforeOrEqual) && !locked[c].includes(d)) {
+      locked[c].push(d);
+    }
+  });
+  saveLocked();
   saveNoClass();
 }
 function getAtt(c, s, d)       { return data?.[c]?.[s]?.[d] || ''; }
@@ -902,6 +976,7 @@ function courseStats(c) {
 async function init() {
   loadData();
   loadNoClass();
+  loadLocked();
   // Si no hay datos en localStorage, cargar automáticamente el JSON inicial
   if (Object.keys(data).length === 0) {
     try {
@@ -993,35 +1068,72 @@ function renderHoy(el) {
     </div>`;
   }).join('');
 
-  const nc = isNoClass(c, date);
-  const ncToggleBtn = `
-    <div style="display:flex;gap:8px">
-      <button class="noclass-btn${nc ? ' active' : ''}" style="flex:1" onclick="toggleNoClassDate()">
-        ${nc ? '📵 Sin clase — Tocá para reactivar' : '📵 Marcar este día como sin clase'}
+  const nc  = isNoClass(c, date);
+  const lck = isLocked(c, date);
+
+  const controlsHTML = `
+    <div style="display:flex;gap:8px;margin-bottom:12px">
+      <button class="noclass-btn${nc ? ' active' : ''}" style="flex:1" onclick="toggleNoClassDate()" ${lck?'disabled title="Desbloqueá primero para cambiar"':''}>
+        ${nc ? '📵 Sin clase — Tocá para reactivar' : '📵 Sin clase'}
       </button>
-      <button class="noclass-btn" style="width:auto;padding:10px 14px;flex-shrink:0" onclick="openNcModal()" title="Ver y editar todas las fechas sin clase">📋 Ver todas</button>
+      <button class="noclass-btn${lck ? ' lock-active' : ''}" style="flex:1" onclick="toggleLockDate()">
+        ${lck ? '🔒 Bloqueado — Tocá para editar' : '🔒 Bloquear fecha'}
+      </button>
+      <button class="noclass-btn" style="width:auto;padding:10px 12px;flex-shrink:0" onclick="openNcModal()" title="Gestionar todas las fechas">📋</button>
     </div>`;
 
-  const bodyHTML = nc
-    ? `<div class="noclass-banner">
-        <div class="nb-icon">📵</div>
-        <div class="nb-title">No hubo clase este día</div>
-        <div class="nb-sub">Esta fecha no cuenta en las estadísticas de asistencia.</div>
-       </div>`
-    : `<div class="day-summary">${chipsHTML}${emptyChip}</div>
-       ${markAllHTML}
-       <div id="studentList">${rowsHTML}</div>`;
+  let bodyHTML;
+  if (nc) {
+    bodyHTML = `<div class="noclass-banner">
+      <div class="nb-icon">📵</div>
+      <div class="nb-title">No hubo clase este día</div>
+      <div class="nb-sub">Esta fecha no cuenta en las estadísticas de asistencia.</div>
+    </div>`;
+  } else if (lck) {
+    // Mostrar lista pero deshabilitada
+    const lockedRows = students.map((s,i) => {
+      const cur = getAtt(c,s,date);
+      const btns = STATES.map(st =>
+        `<button class="att-btn${cur===st?' on':''}" data-state="${st}" disabled style="opacity:0.5;cursor:not-allowed">${st}</button>`
+      ).join('');
+      return `<div class="student-item" style="opacity:0.75">
+        <span class="student-num">${i+1}</span>
+        <span class="student-name">${s}</span>
+        <div class="att-btns">${btns}</div>
+      </div>`;
+    }).join('');
+    bodyHTML = `
+      <div class="lock-banner">
+        <span class="lb-icon">🔒</span>
+        <span class="lb-text">Fecha bloqueada — tocá "Bloqueado" para editar</span>
+      </div>
+      <div class="day-summary">${chipsHTML}${emptyChip}</div>
+      <div id="studentList">${lockedRows}</div>`;
+  } else {
+    bodyHTML = `<div class="day-summary">${chipsHTML}${emptyChip}</div>
+      ${markAllHTML}
+      <div id="studentList">${rowsHTML}</div>`;
+  }
+
+  const lockedCount = (locked[c] || []).length;
+  const lockAllBtn = !lck && lockedCount < dates.length
+    ? `<div style="margin-bottom:10px">
+        <button class="noclass-btn" style="width:100%;font-size:0.78rem" onclick="lockAllPast()">
+          🔒 Bloquear todas las fechas anteriores a esta
+        </button>
+       </div>` : '';
 
   el.innerHTML = `
     <div class="date-nav">
       <button class="arrow" onclick="prevDate()" ${dateIdx===0?'disabled':''}>&lsaquo;</button>
       <div class="date-display">
-        <div class="date-main">${isToday?'🟢 ':''}${nc?'📵 ':''}${formatFull(date)}</div>
+        <div class="date-main">${isToday?'🟢 ':''}${nc?'📵 ':''}${lck?'🔒 ':''}${formatFull(date)}</div>
         <div class="date-sub">${isToday?'Hoy · ':''} Clase ${dateIdx+1} de ${dates.length}</div>
       </div>
       <button class="arrow" onclick="nextDate()" ${dateIdx>=dates.length-1?'disabled':''}>&rsaquo;</button>
     </div>
-    <div class="noclass-toggle">${ncToggleBtn}</div>
+    ${controlsHTML}
+    ${lockAllBtn}
     ${bodyHTML}`;
 }
 
@@ -1029,6 +1141,7 @@ function prevDate() { if (dateIdx>0) { dateIdx--; render(); } }
 function nextDate() { if (dateIdx<SCHOOL[course].dates.length-1) { dateIdx++; render(); } }
 
 function clickBtn(sIdx, date, st) {
+  if (isLocked(course, date)) { showToast('🔒 Fecha bloqueada — tocá "Bloqueado" para editar'); return; }
   const s   = SCHOOL[course].students[sIdx];
   const nst = clickState(course, s, date, st);
 
@@ -1072,6 +1185,22 @@ function toggleNoClassDate() {
   render();
 }
 
+function toggleLockDate() {
+  const date = SCHOOL[course].dates[dateIdx];
+  toggleLocked(course, date);
+  const lck = isLocked(course, date);
+  showToast(lck ? '🔒 Fecha bloqueada' : '🔓 Fecha desbloqueada — podés editar');
+  render();
+}
+
+function lockAllPast() {
+  const date = SCHOOL[course].dates[dateIdx];
+  lockAllBefore(course, date);
+  const cnt = (locked[course] || []).length;
+  showToast('🔒 ' + cnt + ' fechas bloqueadas');
+  render();
+}
+
 // ═══════════════════════════════════════════════
 //  MODAL FECHAS SIN CLASE
 // ═══════════════════════════════════════════════
@@ -1081,32 +1210,60 @@ function openNcModal() {
   const list  = document.getElementById('ncModalList');
 
   list.innerHTML = dates.map((d, i) => {
-    const nc   = isNoClass(c, d);
+    const nc  = isNoClass(c, d);
+    const lck = isLocked(c, d);
     const full = formatFull(d);
-    return `<div class="modal-date-item${nc ? ' nc-active' : ''}" onclick="toggleNcItem('${d}', this)">
+    return `<div class="modal-date-item${nc ? ' nc-active' : ''}${lck ? ' lck-active' : ''}" id="mdi-${i}">
       <div class="mdi-left">
-        <div class="mdi-dot${nc ? ' nc' : ''}"></div>
+        <div class="mdi-dot${nc ? ' nc' : ''}${lck ? ' lck' : ''}"></div>
         <div>
-          <div class="mdi-date">${d}</div>
+          <div class="mdi-date">${lck ? '🔒 ' : ''}${nc ? '📵 ' : ''}${d}</div>
           <div class="mdi-full">${full}</div>
         </div>
       </div>
-      <span class="mdi-badge${nc ? ' nc' : ''}">${nc ? 'Sin clase' : 'Con clase'}</span>
+      <div style="display:flex;gap:6px;flex-shrink:0">
+        <button class="mdi-action-btn${nc?' on-nc':''}" onclick="toggleNcItem('${d}','${i}')" ${lck?'disabled':''} title="Sin clase">📵</button>
+        <button class="mdi-action-btn${lck?' on-lck':''}" onclick="toggleLckItem('${d}','${i}')" title="${lck?'Desbloquear':'Bloquear'}">${lck?'🔒':'🔓'}</button>
+      </div>
     </div>`;
   }).join('');
 
   document.getElementById('ncModal').classList.remove('hidden');
 }
 
-function toggleNcItem(date, el) {
+function toggleNcItem(date, idx) {
   toggleNoClass(course, date);
-  const nc = isNoClass(course, date);
+  const nc  = isNoClass(course, date);
+  const lck = isLocked(course, date);
+  const el  = document.getElementById('mdi-' + idx);
+  if (!el) return;
   el.classList.toggle('nc-active', nc);
-  el.querySelector('.mdi-dot').classList.toggle('nc', nc);
-  el.querySelector('.mdi-badge').textContent = nc ? 'Sin clase' : 'Con clase';
-  el.querySelector('.mdi-badge').classList.toggle('nc', nc);
-  showToast(nc ? '📵 ' + date + ' marcado sin clase' : '✓ ' + date + ' reactivado');
-  // Si la fecha visible en Hoy coincide, re-render al cerrar
+  const dot = el.querySelector('.mdi-dot');
+  dot.classList.toggle('nc', nc);
+  const dateEl = el.querySelector('.mdi-date');
+  dateEl.textContent = (lck ? '🔒 ' : '') + (nc ? '📵 ' : '') + date;
+  const btn = el.querySelectorAll('.mdi-action-btn')[0];
+  btn.classList.toggle('on-nc', nc);
+  showToast(nc ? '📵 ' + date + ' sin clase' : '✓ ' + date + ' reactivado');
+}
+
+function toggleLckItem(date, idx) {
+  toggleLocked(course, date);
+  const lck = isLocked(course, date);
+  const nc  = isNoClass(course, date);
+  const el  = document.getElementById('mdi-' + idx);
+  if (!el) return;
+  el.classList.toggle('lck-active', lck);
+  const dot = el.querySelector('.mdi-dot');
+  dot.classList.toggle('lck', lck);
+  const dateEl = el.querySelector('.mdi-date');
+  dateEl.textContent = (lck ? '🔒 ' : '') + (nc ? '📵 ' : '') + date;
+  const btns = el.querySelectorAll('.mdi-action-btn');
+  btns[0].disabled = lck;
+  btns[1].textContent = lck ? '🔒' : '🔓';
+  btns[1].classList.toggle('on-lck', lck);
+  btns[1].title = lck ? 'Desbloquear' : 'Bloquear';
+  showToast(lck ? '🔒 ' + date + ' bloqueado' : '🔓 ' + date + ' desbloqueado');
 }
 
 function closeNcModal(e) {
@@ -1127,16 +1284,21 @@ function renderTabla(el) {
   const today   = todayKey();
 
   const thDates = dates.map((d,di) => {
-    const nc = isNoClass(c, d);
-    return `<th class="t-date${d===today?' is-today':''}${nc?' sin-clase':''}" title="${formatFull(d)}${nc?' · Sin clase':''}">${d}</th>`;
+    const nc  = isNoClass(c, d);
+    const lck = isLocked(c, d);
+    const extra = nc ? ' sin-clase' : lck ? ' is-locked' : '';
+    const tip   = nc ? ' · Sin clase' : lck ? ' · Bloqueado' : '';
+    return `<th class="t-date${d===today?' is-today':''}${extra}" title="${formatFull(d)}${tip}">${d}</th>`;
   }).join('');
 
   const rows = students.map((s,si) => {
     const cells = dates.map((d,di) => {
-      const nc = isNoClass(c, d);
-      if (nc) return `<td class="t-cell sin-clase" title="Sin clase">—</td>`;
+      const nc  = isNoClass(c, d);
+      const lck = isLocked(c, d);
+      if (nc)  return `<td class="t-cell sin-clase" title="Sin clase">—</td>`;
       const st = getAtt(c,s,d) || '';
-      return `<td class="t-cell s-${st}${d===today?' is-today':''}" onclick="toggleCell(${si},${di})">${st}</td>`;
+      const cls = `t-cell s-${st}${d===today?' is-today':''}${lck?' is-locked':''}`;
+      return `<td class="${cls}" onclick="toggleCell(${si},${di})" ${lck?'title="Bloqueado"':''}>${st}</td>`;
     }).join('');
     return `<tr><td class="t-name" title="${s}">${s}</td>${cells}</tr>`;
   }).join('');
@@ -1161,6 +1323,7 @@ function toggleCell(si, di) {
   const c = course;
   const s = SCHOOL[c].students[si];
   const d = SCHOOL[c].dates[di];
+  if (isLocked(c, d)) { showToast('🔒 Fecha bloqueada — desbloqueá desde la vista Hoy'); return; }
   const nst = toggleAtt(c, s, d);
   const today = todayKey();
 
