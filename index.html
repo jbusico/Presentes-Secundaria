@@ -476,6 +476,104 @@
     }
     #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
 
+    /* ── MODAL FECHAS SIN CLASE ── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.45);
+      z-index: 200;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal-overlay.hidden { display: none; }
+
+    .modal-panel {
+      background: white;
+      border-radius: 20px 20px 0 0;
+      width: 100%;
+      max-width: 600px;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 -4px 24px rgba(0,0,0,0.15);
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 18px 12px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .modal-header h2 { font-size: 1rem; font-weight: 700; }
+    .modal-close {
+      background: var(--bg);
+      border: none;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      font-size: 1.1rem;
+      cursor: pointer;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-subheader {
+      padding: 8px 18px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .modal-list {
+      overflow-y: auto;
+      padding: 10px 14px 20px;
+      flex: 1;
+    }
+
+    .modal-date-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 9px 10px;
+      border-radius: 10px;
+      margin-bottom: 4px;
+      cursor: pointer;
+      transition: background 0.12s;
+      border: 2px solid transparent;
+    }
+    .modal-date-item:hover { background: var(--bg); }
+    .modal-date-item.nc-active {
+      background: #f1f5f9;
+      border-color: #94a3b8;
+    }
+
+    .mdi-left { display: flex; align-items: center; gap: 10px; }
+    .mdi-dot {
+      width: 10px; height: 10px;
+      border-radius: 50%;
+      background: var(--border);
+      flex-shrink: 0;
+    }
+    .mdi-dot.nc { background: #94a3b8; }
+    .mdi-date { font-size: 0.88rem; font-weight: 600; }
+    .mdi-full { font-size: 0.75rem; color: var(--muted); }
+
+    .mdi-badge {
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 3px 9px;
+      border-radius: 12px;
+      background: #e2e8f0;
+      color: #64748b;
+    }
+    .mdi-badge.nc { background: #f1f5f9; color: #475569; }
+
     /* ── EMPTY ── */
     .empty {
       text-align: center;
@@ -512,6 +610,18 @@
 </div>
 
 <div class="content" id="content"></div>
+
+<!-- Modal gestionar fechas sin clase -->
+<div class="modal-overlay hidden" id="ncModal" onclick="closeNcModal(event)">
+  <div class="modal-panel">
+    <div class="modal-header">
+      <h2>📵 Fechas sin clase</h2>
+      <button class="modal-close" onclick="closeNcModalForce()">✕</button>
+    </div>
+    <div class="modal-subheader">Tocá una fecha para marcarla o desmarcarla como sin clase.</div>
+    <div class="modal-list" id="ncModalList"></div>
+  </div>
+</div>
 
 <div id="toast"></div>
 <input type="file" id="importFile" accept=".json" style="display:none" onchange="handleImport(event)">
@@ -881,9 +991,12 @@ function renderHoy(el) {
 
   const nc = isNoClass(c, date);
   const ncToggleBtn = `
-    <button class="noclass-btn${nc ? ' active' : ''}" onclick="toggleNoClassDate()">
-      ${nc ? '📵 Sin clase — Tocá para reactivar' : '📵 Marcar como sin clase (feriado, excursión...)'}
-    </button>`;
+    <div style="display:flex;gap:8px">
+      <button class="noclass-btn${nc ? ' active' : ''}" style="flex:1" onclick="toggleNoClassDate()">
+        ${nc ? '📵 Sin clase — Tocá para reactivar' : '📵 Marcar este día como sin clase'}
+      </button>
+      <button class="noclass-btn" style="width:auto;padding:10px 14px;flex-shrink:0" onclick="openNcModal()" title="Ver y editar todas las fechas sin clase">📋 Ver todas</button>
+    </div>`;
 
   const bodyHTML = nc
     ? `<div class="noclass-banner">
@@ -953,6 +1066,51 @@ function toggleNoClassDate() {
   const active = isNoClass(course, date);
   showToast(active ? '📵 Fecha marcada como sin clase' : '✓ Fecha reactivada');
   render();
+}
+
+// ═══════════════════════════════════════════════
+//  MODAL FECHAS SIN CLASE
+// ═══════════════════════════════════════════════
+function openNcModal() {
+  const c     = course;
+  const dates = SCHOOL[c].dates;
+  const list  = document.getElementById('ncModalList');
+
+  list.innerHTML = dates.map((d, i) => {
+    const nc   = isNoClass(c, d);
+    const full = formatFull(d);
+    return `<div class="modal-date-item${nc ? ' nc-active' : ''}" onclick="toggleNcItem('${d}', this)">
+      <div class="mdi-left">
+        <div class="mdi-dot${nc ? ' nc' : ''}"></div>
+        <div>
+          <div class="mdi-date">${d}</div>
+          <div class="mdi-full">${full}</div>
+        </div>
+      </div>
+      <span class="mdi-badge${nc ? ' nc' : ''}">${nc ? 'Sin clase' : 'Con clase'}</span>
+    </div>`;
+  }).join('');
+
+  document.getElementById('ncModal').classList.remove('hidden');
+}
+
+function toggleNcItem(date, el) {
+  toggleNoClass(course, date);
+  const nc = isNoClass(course, date);
+  el.classList.toggle('nc-active', nc);
+  el.querySelector('.mdi-dot').classList.toggle('nc', nc);
+  el.querySelector('.mdi-badge').textContent = nc ? 'Sin clase' : 'Con clase';
+  el.querySelector('.mdi-badge').classList.toggle('nc', nc);
+  showToast(nc ? '📵 ' + date + ' marcado sin clase' : '✓ ' + date + ' reactivado');
+  // Si la fecha visible en Hoy coincide, re-render al cerrar
+}
+
+function closeNcModal(e) {
+  if (e.target === document.getElementById('ncModal')) closeNcModalForce();
+}
+function closeNcModalForce() {
+  document.getElementById('ncModal').classList.add('hidden');
+  render(); // actualizar la vista principal con los cambios
 }
 
 // ═══════════════════════════════════════════════
