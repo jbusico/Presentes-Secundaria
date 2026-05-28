@@ -418,6 +418,44 @@
     }
     .sort-btn.active { border-color: var(--primary); color: var(--primary); background: #ede9fe; }
 
+    /* ── SIN CLASE ── */
+    .noclass-toggle { margin-bottom: 12px; }
+
+    .noclass-btn {
+      width: 100%;
+      padding: 10px 14px;
+      border: 2px dashed var(--border);
+      background: white;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 600;
+      color: var(--muted);
+      transition: all 0.15s;
+      text-align: center;
+    }
+    .noclass-btn:hover { border-color: #94a3b8; background: #f8fafc; }
+    .noclass-btn.active {
+      background: #f1f5f9;
+      border-style: solid;
+      border-color: #94a3b8;
+      color: var(--text);
+    }
+
+    .noclass-banner {
+      text-align: center;
+      padding: 44px 20px;
+      background: white;
+      border-radius: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+    }
+    .nb-icon { font-size: 2.8rem; margin-bottom: 10px; }
+    .nb-title { font-size: 1rem; font-weight: 700; margin-bottom: 4px; }
+    .nb-sub { font-size: 0.82rem; color: var(--muted); }
+
+    th.t-date.sin-clase { background: #f1f5f9; color: #94a3b8; text-decoration: line-through; }
+    td.t-cell.sin-clase { background: #f8fafc; color: #cbd5e1; cursor: default; font-size: 0.9rem; }
+
     /* ── TOAST ── */
     #toast {
       position: fixed;
@@ -632,6 +670,7 @@ let view     = 'hoy';
 let dateIdx  = 0;
 let sortMode = 'orden';   // 'orden' | 'pct' | 'nombre'
 let data     = {};        // { course: { student: { date: state } } }
+let noClass  = {};        // { course: [date, date, ...] }
 
 // ═══════════════════════════════════════════════
 //  STORAGE
@@ -642,6 +681,23 @@ function loadData() {
 }
 function saveData() {
   localStorage.setItem('presentismo2026', JSON.stringify(data));
+}
+function loadNoClass() {
+  try { noClass = JSON.parse(localStorage.getItem('sinClase2026') || '{}'); }
+  catch(e) { noClass = {}; }
+}
+function saveNoClass() {
+  localStorage.setItem('sinClase2026', JSON.stringify(noClass));
+}
+function isNoClass(c, d) {
+  return (noClass[c] || []).includes(d);
+}
+function toggleNoClass(c, d) {
+  if (!noClass[c]) noClass[c] = [];
+  const idx = noClass[c].indexOf(d);
+  if (idx >= 0) noClass[c].splice(idx, 1);
+  else          noClass[c].push(d);
+  saveNoClass();
 }
 function getAtt(c, s, d)       { return data?.[c]?.[s]?.[d] || ''; }
 function setAtt(c, s, d, val)  {
@@ -699,7 +755,12 @@ function closestIdx(c) {
 // ═══════════════════════════════════════════════
 function studentStats(c, s) {
   const counts = { P:0, A:0, J:0, T:0 };
-  SCHOOL[c].dates.forEach(d => { const st = getAtt(c,s,d); if (st) counts[st]++; });
+  // excluir fechas sin clase del cálculo
+  SCHOOL[c].dates.forEach(d => {
+    if (isNoClass(c, d)) return;
+    const st = getAtt(c,s,d);
+    if (st) counts[st]++;
+  });
   const total = counts.P + counts.A + counts.J + counts.T;
   const pct   = total > 0 ? Math.round((counts.P + counts.T) / total * 100) : null;
   return { counts, total, pct };
@@ -712,10 +773,13 @@ function courseStats(c) {
   });
   const all = Object.values(totals).reduce((a,b)=>a+b, 0);
   const pct = all > 0 ? Math.round((totals.P + totals.T) / all * 100) : null;
-  const markedDates = SCHOOL[c].dates.filter(d =>
+  // no contar fechas sin clase ni fechas futuras sin datos
+  const activeDates = SCHOOL[c].dates.filter(d => !isNoClass(c, d));
+  const markedDates = activeDates.filter(d =>
     SCHOOL[c].students.some(s => getAtt(c,s,d))
   ).length;
-  return { totals, all, pct, markedDates };
+  const noClassCount = (noClass[c] || []).length;
+  return { totals, all, pct, markedDates, noClassCount };
 }
 
 // ═══════════════════════════════════════════════
@@ -723,6 +787,7 @@ function courseStats(c) {
 // ═══════════════════════════════════════════════
 async function init() {
   loadData();
+  loadNoClass();
   // Si no hay datos en localStorage, cargar automáticamente el JSON inicial
   if (Object.keys(data).length === 0) {
     try {
@@ -814,18 +879,33 @@ function renderHoy(el) {
     </div>`;
   }).join('');
 
+  const nc = isNoClass(c, date);
+  const ncToggleBtn = `
+    <button class="noclass-btn${nc ? ' active' : ''}" onclick="toggleNoClassDate()">
+      ${nc ? '📵 Sin clase — Tocá para reactivar' : '📵 Marcar como sin clase (feriado, excursión...)'}
+    </button>`;
+
+  const bodyHTML = nc
+    ? `<div class="noclass-banner">
+        <div class="nb-icon">📵</div>
+        <div class="nb-title">No hubo clase este día</div>
+        <div class="nb-sub">Esta fecha no cuenta en las estadísticas de asistencia.</div>
+       </div>`
+    : `<div class="day-summary">${chipsHTML}${emptyChip}</div>
+       ${markAllHTML}
+       <div id="studentList">${rowsHTML}</div>`;
+
   el.innerHTML = `
     <div class="date-nav">
       <button class="arrow" onclick="prevDate()" ${dateIdx===0?'disabled':''}>&lsaquo;</button>
       <div class="date-display">
-        <div class="date-main">${isToday?'🟢 ':''}${formatFull(date)}</div>
+        <div class="date-main">${isToday?'🟢 ':''}${nc?'📵 ':''}${formatFull(date)}</div>
         <div class="date-sub">${isToday?'Hoy · ':''} Clase ${dateIdx+1} de ${dates.length}</div>
       </div>
       <button class="arrow" onclick="nextDate()" ${dateIdx>=dates.length-1?'disabled':''}>&rsaquo;</button>
     </div>
-    <div class="day-summary">${chipsHTML}${emptyChip}</div>
-    ${markAllHTML}
-    <div id="studentList">${rowsHTML}</div>`;
+    <div class="noclass-toggle">${ncToggleBtn}</div>
+    ${bodyHTML}`;
 }
 
 function prevDate() { if (dateIdx>0) { dateIdx--; render(); } }
@@ -867,6 +947,14 @@ function markAll(date, st) {
   showToast('✓ Todos marcados como ' + S_LABEL[st]);
 }
 
+function toggleNoClassDate() {
+  const date = SCHOOL[course].dates[dateIdx];
+  toggleNoClass(course, date);
+  const active = isNoClass(course, date);
+  showToast(active ? '📵 Fecha marcada como sin clase' : '✓ Fecha reactivada');
+  render();
+}
+
 // ═══════════════════════════════════════════════
 //  VIEW: TABLA
 // ═══════════════════════════════════════════════
@@ -876,12 +964,15 @@ function renderTabla(el) {
   const students= SCHOOL[c].students;
   const today   = todayKey();
 
-  const thDates = dates.map((d,di) =>
-    `<th class="t-date${d===today?' is-today':''}" title="${formatFull(d)}">${d}</th>`
-  ).join('');
+  const thDates = dates.map((d,di) => {
+    const nc = isNoClass(c, d);
+    return `<th class="t-date${d===today?' is-today':''}${nc?' sin-clase':''}" title="${formatFull(d)}${nc?' · Sin clase':''}">${d}</th>`;
+  }).join('');
 
   const rows = students.map((s,si) => {
     const cells = dates.map((d,di) => {
+      const nc = isNoClass(c, d);
+      if (nc) return `<td class="t-cell sin-clase" title="Sin clase">—</td>`;
       const st = getAtt(c,s,d) || '';
       return `<td class="t-cell s-${st}${d===today?' is-today':''}" onclick="toggleCell(${si},${di})">${st}</td>`;
     }).join('');
@@ -986,7 +1077,7 @@ function renderStats(el) {
       <div class="stats-overview-top">
         <div>
           <h2>${c}</h2>
-          <div class="sub">${students.length} alumnos · ${cs.markedDates}/${SCHOOL[c].dates.length} clases registradas</div>
+          <div class="sub">${students.length} alumnos · ${cs.markedDates}/${SCHOOL[c].dates.length - cs.noClassCount} clases registradas${cs.noClassCount > 0 ? ' · ' + cs.noClassCount + ' sin clase' : ''}</div>
         </div>
         <div style="text-align:center">
           <div class="big-pct" style="color:${pctColor}">${pctText}</div>
