@@ -397,6 +397,34 @@
     }
     .ssr-detail span { font-weight: 600; }
 
+    /* ── BIMESTRE TABS ── */
+    .bimester-tabs {
+      display: flex;
+      background: white;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 14px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.07);
+      gap: 3px;
+    }
+    .bim-btn {
+      flex: 1;
+      padding: 7px 2px;
+      border: none;
+      background: none;
+      border-radius: 9px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+      line-height: 1.25;
+      text-align: center;
+    }
+    .bim-btn.active { background: var(--primary); color: white; }
+    .bim-btn:hover:not(.active) { background: var(--bg); color: var(--text); }
+
     /* ── SORT ── */
     .sort-bar {
       display: flex;
@@ -769,13 +797,22 @@ const MONTHS_STR = ['ene','feb','mar','abr','may','jun','jul','ago','sept','oct'
 const MONTHS_ES  = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const DAYS_ES    = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 
+const BIMESTERS = [
+  { label: 'Año',    short: 'Año completo', start: null,    end: null    },
+  { label: '1° Bim', short: '1° Bimestre',  start: '2-mar', end: '7-may' },
+  { label: '2° Bim', short: '2° Bimestre',  start: '8-may', end: '17-jul'},
+  { label: '3° Bim', short: '3° Bimestre',  start: '4-ago', end: '2-oct' },
+  { label: '4° Bim', short: '4° Bimestre',  start: '5-oct', end: '3-dic' },
+];
+
 // ═══════════════════════════════════════════════
 //  ESTADO DE LA APP
 // ═══════════════════════════════════════════════
 let course   = COURSES[0];
 let view     = 'hoy';
 let dateIdx  = 0;
-let sortMode = 'orden';   // 'orden' | 'pct' | 'nombre'
+let sortMode      = 'orden';   // 'orden' | 'pct' | 'nombre'
+let statsBimester = 0;         // 0 = año completo, 1-4 = bimestre
 let data     = {};        // { course: { student: { date: state } } }
 let noClass  = {};        // { course: [date, date, ...] }
 let locked   = {};        // { course: [date, date, ...] }
@@ -905,10 +942,20 @@ function closestIdx(c) {
 // ═══════════════════════════════════════════════
 //  STATS HELPERS
 // ═══════════════════════════════════════════════
-function studentStats(c, s) {
+function getBimesterDates(c) {
+  const b = BIMESTERS[statsBimester];
+  if (!b.start) return SCHOOL[c].dates;
+  const start = parseDate(b.start);
+  const end   = parseDate(b.end);
+  return SCHOOL[c].dates.filter(d => {
+    const dt = parseDate(d);
+    return dt >= start && dt <= end;
+  });
+}
+function studentStats(c, s, filteredDates) {
+  const dates  = filteredDates || SCHOOL[c].dates;
   const counts = { P:0, A:0, J:0, T:0 };
-  // excluir fechas sin clase del cálculo
-  SCHOOL[c].dates.forEach(d => {
+  dates.forEach(d => {
     if (isNoClass(c, d)) return;
     const st = getAtt(c,s,d);
     if (st) counts[st]++;
@@ -917,20 +964,20 @@ function studentStats(c, s) {
   const pct   = total > 0 ? Math.round((counts.P + counts.T) / total * 100) : null;
   return { counts, total, pct };
 }
-function courseStats(c) {
+function courseStats(c, filteredDates) {
+  const dates  = filteredDates || SCHOOL[c].dates;
   const totals = { P:0, A:0, J:0, T:0 };
   SCHOOL[c].students.forEach(s => {
-    const r = studentStats(c,s);
+    const r = studentStats(c, s, dates);
     STATES.forEach(st => totals[st] += r.counts[st]);
   });
   const all = Object.values(totals).reduce((a,b)=>a+b, 0);
   const pct = all > 0 ? Math.round((totals.P + totals.T) / all * 100) : null;
-  // no contar fechas sin clase ni fechas futuras sin datos
-  const activeDates = SCHOOL[c].dates.filter(d => !isNoClass(c, d));
+  const activeDates = dates.filter(d => !isNoClass(c, d));
   const markedDates = activeDates.filter(d =>
     SCHOOL[c].students.some(s => getAtt(c,s,d))
   ).length;
-  const noClassCount = (noClass[c] || []).length;
+  const noClassCount = dates.filter(d => isNoClass(c, d)).length;
   return { totals, all, pct, markedDates, noClassCount };
 }
 
@@ -1383,9 +1430,12 @@ function toggleCell(si, di) {
 //  VIEW: ESTADÍSTICAS
 // ═══════════════════════════════════════════════
 function renderStats(el) {
-  const c       = course;
-  const students= SCHOOL[c].students;
-  const cs      = courseStats(c);
+  const c            = course;
+  const students     = SCHOOL[c].students;
+  const bimDates     = getBimesterDates(c);
+  const cs           = courseStats(c, bimDates);
+  const bimLabel     = BIMESTERS[statsBimester].short;
+  const totalDates   = bimDates.length - cs.noClassCount;
 
   // Overview card
   const pctColor = cs.pct === null ? '#94a3b8' : cs.pct >= 75 ? '#22c55e' : cs.pct >= 60 ? '#f59e0b' : '#ef4444';
@@ -1397,14 +1447,21 @@ function renderStats(el) {
       <div class="sc-lbl" style="color:${S_COLOR[st]}">${S_LABEL[st]}</div>
     </div>`).join('');
 
+  // Bimester tabs
+  const bimTabsHTML = `<div class="bimester-tabs">
+    ${BIMESTERS.map((b, idx) =>
+      `<button class="bim-btn${statsBimester===idx?' active':''}" onclick="setBimester(${idx})">${b.label}</button>`
+    ).join('')}
+  </div>`;
+
   // Sort students
-  let sorted = students.map((s,i) => ({ s, i, ...studentStats(c,s) }));
+  let sorted = students.map((s,i) => ({ s, i, ...studentStats(c, s, bimDates) }));
   if (sortMode === 'pct') {
     sorted.sort((a,b) => {
       if (a.pct===null && b.pct===null) return 0;
       if (a.pct===null) return 1;
       if (b.pct===null) return -1;
-      return a.pct - b.pct; // ascending (worst first)
+      return a.pct - b.pct;
     });
   } else if (sortMode === 'nombre') {
     sorted.sort((a,b) => a.s.localeCompare(b.s));
@@ -1442,11 +1499,12 @@ function renderStats(el) {
   </div>`;
 
   el.innerHTML = `
+    ${bimTabsHTML}
     <div class="stats-overview">
       <div class="stats-overview-top">
         <div>
           <h2>${c}</h2>
-          <div class="sub">${students.length} alumnos · ${cs.markedDates}/${SCHOOL[c].dates.length - cs.noClassCount} clases registradas${cs.noClassCount > 0 ? ' · ' + cs.noClassCount + ' sin clase' : ''}</div>
+          <div class="sub">${bimLabel} · ${students.length} alumnos · ${cs.markedDates}/${totalDates} clases registradas${cs.noClassCount > 0 ? ' · ' + cs.noClassCount + ' sin clase' : ''}</div>
         </div>
         <div style="text-align:center">
           <div class="big-pct" style="color:${pctColor}">${pctText}</div>
@@ -1462,6 +1520,11 @@ function renderStats(el) {
 
 function setSort(mode) {
   sortMode = mode;
+  renderStats(document.getElementById('content'));
+}
+
+function setBimester(idx) {
+  statsBimester = idx;
   renderStats(document.getElementById('content'));
 }
 
